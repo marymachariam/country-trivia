@@ -5,23 +5,96 @@ Add image caching support to the Country Trivia Flutter app using `cached_networ
 
 > **PR Gate:** Every UI-related ticket MUST pass emulator validation before a PR is raised. See [Emulator Testing Requirements](#emulator-testing-requirements).
 
+> **Branching Strategy:** All feature work happens on `feature/T-XXX` branches, merges into `develop` via PR, and `develop` is periodically merged to `master`. See [Branching Strategy](#branching-strategy).
+
 ---
 
 ## Ticket Summary
 
-| Ticket | Title | Group | Dependencies | Parallelizable | Emulator Test |
-|--------|-------|-------|--------------|----------------|---------------|
-| T-001 | Add cached_network_image dependency | A | None | No (must be first) | No |
-| T-002 | Create FlagCacheManager with custom config | B | T-001 | No (depends on T-001) | No |
-| T-003 | Create ImageCacheService with cache operations | B | T-001 | No (depends on T-001) | No |
-| T-004 | Update FlagCard widget to use cached images | C | T-002, T-003 | Yes (parallel with T-005) | **Yes — required before PR** |
-| T-005 | Update app.dart provider tree | C | T-003 | Yes (parallel with T-004) | **Yes — required before PR** |
-| T-006 | Update GameViewModel with preload/clear methods | C | T-003 | Yes (parallel with T-004, T-005) | **Yes — required before PR** |
-| T-007 | Update GameView to pass cacheService to FlagCard | D | T-004, T-005, T-006 | No (depends on C) | **Yes — required before PR** |
-| T-008 | Add cache management UI (clear cache button) | D | T-006 | Yes (parallel with T-007) | **Yes — required before PR** |
-| T-009 | Write unit tests for ImageCacheService | E | T-003, T-006 | Yes (parallel with T-010) | No (unit tests only) |
-| T-010 | Write widget tests for FlagCard with cache | E | T-004, T-007 | Yes (parallel with T-009) | **Yes — required before PR** |
-| T-011 | Integration test for cache preloading | F | T-007, T-008, T-009, T-010 | No (final validation) | **Yes — required before PR** |
+| Ticket | Title | Group | Dependencies | Parallelizable | Emulator Test | Branch |
+|--------|-------|-------|--------------|----------------|---------------|--------|
+| T-001 | Add cached_network_image dependency | A | None | No (must be first) | No | `feature/T-001` |
+| T-002 | Create FlagCacheManager with custom config | B | T-001 | No (depends on T-001) | No | `feature/T-002` |
+| T-003 | Create ImageCacheService with cache operations | B | T-001 | No (depends on T-001) | No | `feature/T-003` |
+| T-004 | Update FlagCard widget to use cached images | C | T-002, T-003 | Yes (parallel with T-005) | **Yes — required before PR** | `feature/T-004` |
+| T-005 | Update app.dart provider tree | C | T-003 | Yes (parallel with T-004) | **Yes — required before PR** | `feature/T-005` |
+| T-006 | Update GameViewModel with preload/clear methods | C | T-003 | Yes (parallel with T-004, T-005) | **Yes — required before PR** | `feature/T-006` |
+| T-007 | Update GameView to pass cacheService to FlagCard | D | T-004, T-005, T-006 | No (depends on C) | **Yes — required before PR** | `feature/T-007` |
+| T-008 | Add cache management UI (clear cache button) | D | T-006 | Yes (parallel with T-007) | **Yes — required before PR** | `feature/T-008` |
+| T-009 | Write unit tests for ImageCacheService | E | T-003, T-006 | Yes (parallel with T-010) | No (unit tests only) | `feature/T-009` |
+| T-010 | Write widget tests for FlagCard with cache | E | T-004, T-007 | Yes (parallel with T-009) | **Yes — required before PR** | `feature/T-010` |
+| T-011 | Integration test for cache preloading | F | T-007, T-008, T-009, T-010 | No (final validation) | **Yes — required before PR** | `feature/T-011` |
+
+---
+
+## Branching Strategy
+
+### Branch Hierarchy
+
+```
+master (production-ready, protected)
+  ↑
+  │  merge via PR (release merge)
+  │
+develop (integration branch, protected)
+  ↑
+  │  merge via PR (feature merge)
+  │
+feature/T-001, feature/T-002, ... (feature branches)
+```
+
+### Branch Purposes
+
+| Branch | Purpose | Protection |
+|--------|---------|------------|
+| `master` | Production-ready code. Only updated via PR from `develop`. | Protected — no direct pushes |
+| `develop` | Integration branch where all feature branches merge. Must always be buildable. | Protected — no direct pushes |
+| `feature/T-XXX` | Individual ticket work. One branch per ticket. | Deleted after merge |
+
+### Workflow per Ticket
+
+```bash
+# 1. Start from develop
+git checkout develop
+git pull origin develop
+
+# 2. Create feature branch
+git checkout -b feature/T-XXX
+
+# 3. Do the work, commit regularly
+git add -A
+git commit -m "T-XXX: description of changes"
+
+# 4. Push feature branch
+git push origin feature/T-XXX
+
+# 5. Run pre-PR checks
+flutter analyze
+flutter test
+flutter emulators --launch <emulator_id>
+# ... manual emulator validation ...
+
+# 6. Raise PR: feature/T-XXX → develop
+#    via GitHub UI or: gh pr create --base develop --head feature/T-XXX
+
+# 7. After PR approval & merge, clean up
+git checkout develop
+git pull origin develop
+git branch -d feature/T-XXX
+```
+
+### Release Merge (develop → master)
+
+```bash
+# When develop is stable and all tickets are complete:
+git checkout master
+git pull origin master
+git merge develop
+git push origin master
+
+# Or via PR:
+gh pr create --base master --head develop --title "Release: Image Cache Implementation"
+```
 
 ---
 
@@ -44,6 +117,9 @@ Group E: [T-009, T-010]  ← parallel — T-010 emulator test before PR
            │
            ▼
 Group F: [T-011]  ← emulator test before PR
+           │
+           ▼
+Release: develop → master
 ```
 
 ---
@@ -95,6 +171,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-001: Add cached_network_image dependency
 **Group:** A  
+**Branch:** `feature/T-001` → `develop`  
 **Dependencies:** None  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** N/A (dependency only)
@@ -111,6 +188,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-002: Create FlagCacheManager with custom config
 **Group:** B  
+**Branch:** `feature/T-002` → `develop`  
 **Dependencies:** T-001  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** N/A (internal config)
@@ -127,6 +205,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-003: Create ImageCacheService with cache operations
 **Group:** B  
+**Branch:** `feature/T-003` → `develop`  
 **Dependencies:** T-001  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** N/A (service layer, validated via T-004/T-006)
@@ -144,6 +223,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-004: Update FlagCard widget to use cached images
 **Group:** C  
+**Branch:** `feature/T-004` → `develop`  
 **Dependencies:** T-002, T-003  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -166,6 +246,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-005: Update app.dart provider tree
 **Group:** C  
+**Branch:** `feature/T-005` → `develop`  
 **Dependencies:** T-003  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -186,6 +267,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-006: Update GameViewModel with preload/clear methods
 **Group:** C  
+**Branch:** `feature/T-006` → `develop`  
 **Dependencies:** T-003  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -209,6 +291,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-007: Update GameView to pass cacheService to FlagCard
 **Group:** D  
+**Branch:** `feature/T-007` → `develop`  
 **Dependencies:** T-004, T-005, T-006  
 **Status:** ✅ COMPLETE  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -229,6 +312,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-008: Add cache management UI (clear cache button)
 **Group:** D  
+**Branch:** `feature/T-008` → `develop`  
 **Dependencies:** T-006  
 **Status:** PENDING  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -253,6 +337,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-009: Write unit tests for ImageCacheService
 **Group:** E  
+**Branch:** `feature/T-009` → `develop`  
 **Dependencies:** T-003, T-006  
 **Status:** PENDING  
 **Emulator Test:** No (unit tests run on host)
@@ -270,6 +355,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-010: Write widget tests for FlagCard with cache
 **Group:** E  
+**Branch:** `feature/T-010` → `develop`  
 **Dependencies:** T-004, T-007  
 **Status:** PENDING  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -293,6 +379,7 @@ flutter test integration_test/ -d <emulator_id>
 
 ### T-011: Integration test for cache preloading
 **Group:** F  
+**Branch:** `feature/T-011` → `develop`  
 **Dependencies:** T-007, T-008, T-009, T-010  
 **Status:** PENDING  
 **Emulator Test:** ✅ REQUIRED BEFORE PR
@@ -349,6 +436,10 @@ flutter test integration_test/ -d <emulator_id>
 - **T-011 must pass emulator validation before its PR is raised**
 - T-011 is the final integration test, depends on all previous tickets
 
+### Release Phase
+- After all tickets merge to `develop`, raise a release PR: `develop` → `master`
+- Run full test suite + emulator validation on the release PR
+
 ---
 
 ## Risk Mitigation
@@ -361,12 +452,16 @@ flutter test integration_test/ -d <emulator_id>
 | Test flakiness with network images | Mock `ImageCacheService` in widget tests |
 | Emulator test failures block PR | Run emulator tests early and often; don't wait until PR |
 | Cache not persisting on emulator | Verify `flutter_cache_manager` file service works on emulator filesystem |
+| Feature branch divergence from develop | Rebase on develop before raising PR: `git rebase develop` |
+| Merge conflicts in develop | Keep feature branches short-lived; merge promptly after approval |
 
 ---
 
 ## Definition of Done
 
 - [ ] All tickets completed
+- [ ] All feature branches merged to `develop` via PR
+- [ ] `develop` merged to `master` via release PR
 - [ ] `flutter analyze` passes with zero issues
 - [ ] All unit tests pass
 - [ ] All widget tests pass
