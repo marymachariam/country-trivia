@@ -18,8 +18,9 @@ class GameView extends StatelessWidget {
         title: const Text('Country Trivia'),
         centerTitle: true,
         actions: [
+          // ── Score display ──────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.only(right: 8),
             child: Center(
               child: Consumer<GameViewModel>(
                 builder: (context, vm, _) {
@@ -40,6 +41,13 @@ class GameView extends StatelessWidget {
                 },
               ),
             ),
+          ),
+
+          // ── Clear cache button ─────────────────────────────────
+          IconButton(
+            icon: const Icon(Icons.delete_sweep),
+            tooltip: 'Clear Cache',
+            onPressed: () => _showClearCacheDialog(context),
           ),
         ],
       ),
@@ -218,6 +226,46 @@ class GameView extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
       ),
+    );
+  }
+
+  // ── Clear Cache Dialog ─────────────────────────────────────────
+
+  void _showClearCacheDialog(BuildContext context) {
+    final vm = context.read<GameViewModel>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Clear Cache'),
+          content: const Text(
+            'This will remove all cached flag images. '
+            'They will be re-downloaded when needed. Continue?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await vm.clearImageCache();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Cache cleared successfully'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Clear'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
